@@ -27,6 +27,8 @@ function App() {
       const id = (movies.length + _.random(5000)).toString();
       const movie = { id, name, comment, genre, rating };
       dispatch(addMovie(movie));
+      setName("");
+      setComment("");
     }
     if (isEditing) {
       const movie = { id: idToEdit, name, comment, genre, rating };
