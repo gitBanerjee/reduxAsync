@@ -23,7 +23,7 @@ export const loadMovie = () => {
     setTimeout(async () => {
       const { data } = await axios.get("http://localhost:3006/movies");
       dispatch({ type: FETCH_MOVIE, payload: data });
-    }, 5000);
+    }, 1000);
   };
 };
 
@@ -45,8 +45,9 @@ export const removeMovie = (movie) => {
 
 export const updateMovie = (movie) => {
   return async (dispatch) => {
-    await axios.post("http://localhost:3006/movies", movie);
-    dispatch({ type: ADD_MOVIE, payload: movie });
+    dispatch({ type: LOAD_MOVIE, payload: [] });
+    await axios.put(`http://localhost:3006/movies/${movie.id}`, movie);
+    dispatch({ type: UPDATE_MOVIE, payload: movie });
   };
 };
 
@@ -69,7 +70,15 @@ export default function rootReducer(state = intialState, action) {
       );
       return { ...state, movies: updatedMovies, loading: false };
     case UPDATE_MOVIE:
-      return { ...state, movies: [...state.movies, action.payload] };
+      const updatedMoviesList = _.filter(
+        state.movies,
+        (el) => el.id !== action.payload.id
+      );
+      return {
+        ...state,
+        movies: [...updatedMoviesList, action.payload],
+        loading: false,
+      };
     default:
       return state;
   }

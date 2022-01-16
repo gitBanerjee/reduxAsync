@@ -3,17 +3,19 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import "./App.css";
 import { Oval } from "react-loader-spinner";
-import { loadMovie, addMovie, removeMovie } from "./reducers";
-import store from "./store";
+import { loadMovie, addMovie, removeMovie, updateMovie } from "./reducers";
 
 function App() {
   const movies = useSelector((state) => _.get(state, "movies"));
   const loading = useSelector((state) => _.get(state, "loading"));
+  const dispatch = useDispatch();
+  //states
+  const [idToEdit, setIdToEdit] = useState();
   const [name, setName] = useState();
   const [comment, setComment] = useState();
   const [genre, setGenre] = useState("Action");
   const [rating, setRating] = useState("0");
-  const dispatch = useDispatch();
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     dispatch(loadMovie());
@@ -21,23 +23,35 @@ function App() {
 
   const onSubmitHandler = (e) => {
     e.preventDefault();
-    if (name && comment) {
+    if (name && comment && !isEditing) {
       const id = (movies.length + _.random(5000)).toString();
       const movie = { id, name, comment, genre, rating };
-      console.log(movie);
       dispatch(addMovie(movie));
     }
-    console.log(store.getState());
+    if (isEditing) {
+      const movie = { id: idToEdit, name, comment, genre, rating };
+      dispatch(updateMovie(movie));
+      setIdToEdit("");
+      setIsEditing(false);
+    }
   };
 
-  const onEditHandler = (e) => {
-    e.preventDefault();
+  const onEditHandler = (id) => {
+    const { name, comment, genre, rating } = _.find(
+      movies,
+      (el) => el.id === id
+    );
+    setIdToEdit(id);
+    setName(name);
+    setComment(comment);
+    setGenre(genre);
+    setRating(rating);
+    setIsEditing(true);
   };
 
   const onDeleteHandler = (id) => {
     const movieToDelete = _.find(movies, (el) => el.id === id);
     dispatch(removeMovie(movieToDelete));
-    console.log(id);
   };
 
   const handleName = (e) => {
@@ -53,6 +67,12 @@ function App() {
     setRating(e.target.value);
   };
   const renderSection = _.map(movies, ({ id, name, comment, rating }) => {
+    if (loading)
+      return (
+        <div className="App">
+          <Oval color="#00BFFF" height={500} width={500} />
+        </div>
+      );
     return (
       <div key={id} className="container">
         <div className="name">
@@ -67,7 +87,7 @@ function App() {
             <button
               class="button button-outline"
               style={{ color: "purple" }}
-              onClick={onEditHandler}
+              onClick={() => onEditHandler(id)}
             >
               Edit
             </button>
@@ -86,13 +106,6 @@ function App() {
       </div>
     );
   });
-
-  if (loading)
-    return (
-      <div className="App">
-        <Oval color="#00BFFF" height={500} width={500} />
-      </div>
-    );
   return (
     <React.Fragment>
       <div className="App">
@@ -103,23 +116,29 @@ function App() {
               type="text"
               placeholder="Enter Movie Name Here"
               id="nameField"
+              value={name}
               onChange={(e) => handleName(e)}
             />
             <label for="commentField">Movie Details</label>
             <textarea
               placeholder="Enter Movie Details Here"
               id="commentField"
+              value={comment}
               onChange={(e) => handleComment(e)}
             ></textarea>
             <label for="genre">Genre</label>
-            <select id="genre" onChange={(e) => onChangeGenre(e)}>
+            <select id="genre" value={genre} onChange={(e) => onChangeGenre(e)}>
               <option value="Action">Action</option>
               <option value="Comedy">Comedy</option>
               <option value="Thriller">Thriller</option>
               <option value="Horror">Horror</option>
             </select>
             <label for="rating">Rating</label>
-            <select id="rating" onChange={(e) => onChangeRating(e)}>
+            <select
+              id="rating"
+              value={rating}
+              onChange={(e) => onChangeRating(e)}
+            >
               <option value="0">0</option>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -127,11 +146,13 @@ function App() {
               <option value="4">4</option>
               <option value="5">5</option>
             </select>
-            <input
-              class="button-primary"
+            <button
+              class="button button-primary"
               type="submit"
               onClick={onSubmitHandler}
-            />
+            >
+              {isEditing ? "UPDATE" : "SUBMIT"}
+            </button>
           </fieldset>
         </form>
       </div>
